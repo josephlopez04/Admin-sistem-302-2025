@@ -1,1 +1,49 @@
-pow.ps1
+$DomainName = "5demayo.com" 
+$NetbiosName = "CINCO"
+$SafeModePwd = ConvertTo-SecureString "Yellowfist7!" -AsPlainText -Force
+
+# Instalar rol ADDS si no está instalado
+if (-not (Get-WindowsFeature -Name AD-Domain-Services).Installed) {
+    Write-Host "Instalando rol ADDS..."
+    Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+}
+
+# Verifica si el servidor ya es un controlador de dominio
+$IsDomainController = (Get-WmiObject Win32_ComputerSystem).DomainRole -eq 5
+
+if (-not $IsDomainController) {
+    Write-Host "Creando dominio $DomainName..."
+    Install-ADDSForest `
+        -DomainName $DomainName `
+        -DomainNetbiosName $NetbiosName `
+        -SafeModeAdministratorPassword $SafeModePwd `
+        -Force
+    return
+} else {
+    Write-Host "El servidor ya es un controlador de dominio. Procediendo..."
+}
+
+# Importar módulo de Active Directory
+Import-Module ActiveDirectory
+
+# Crear Unidades Organizativas si no existen
+if (-not (Get-ADOrganizationalUnit -Filter { Name -eq "cuates" })) {
+    New-ADOrganizationalUnit -Name "cuates" -Path "DC=5demayo,DC=com"
+}
+
+if (-not (Get-ADOrganizationalUnit -Filter { Name -eq "no cuates" })) {
+    New-ADOrganizationalUnit -Name "no cuates" -Path "DC=5demayo,DC=com"
+}
+
+# Crear usuarios si no existen
+if (-not (Get-ADUser -Filter { SamAccountName -eq "Ignacio" })) {
+    $PassIgnacio = ConvertTo-SecureString "Ignacio#2024!" -AsPlainText -Force
+    New-ADUser -Name "Ignacio" -SamAccountName "Ignacio" -AccountPassword $PassIgnacio -Enabled $true -Path "OU=cuates,DC=5demayo,DC=com" 
+}
+
+if (-not (Get-ADUser -Filter { SamAccountName -eq "Zaragoza" })) {
+    $PassZaragoza = ConvertTo-SecureString "Zaragoza#2024!" -AsPlainText -Force
+    New-ADUser -Name "Zaragoza" -SamAccountName "Zaragoza" -AccountPassword $PassZaragoza -Enabled $true -Path "OU=no cuates,DC=5demayo,DC=com" 
+}
+
+Write-Host "Todo listo: UOs y usuarios creados correctamente."
