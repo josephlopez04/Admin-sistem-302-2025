@@ -80,7 +80,7 @@ spec:
     app: flask-api
   ports:
     - protocol: TCP
-      port: 80
+      port: 5000
       targetPort: 5000
   type: NodePort
 EOF
@@ -90,7 +90,5 @@ echo "Esperando que el pod esté listo (90s máx)..."
 kubectl wait --for=condition=Ready pod/flask-api -n flask-demo --timeout=90s || echo "El pod no está listo. Puedes revisar con: kubectl logs flask-api -n flask-demo"
 
 # Obtener URL del servicio
-echo ""
-echo "¡Aplicación Flask desplegada correctamente!"
-echo "Accede a tu app Flask aquí:"
+echo "Comando para acceder al Flask:"
 minikube service flask-service -n flask-demo --url
